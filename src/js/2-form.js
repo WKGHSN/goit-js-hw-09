@@ -1,37 +1,40 @@
-const formData = {
+const form = document.querySelector('.feedback-form');
+const emailInput = form.elements.email;
+const messageInput = form.elements.message;
+
+const STORAGE_KEY = 'feedback-form-state';
+let formData = {
   email: '',
   message: '',
 };
-const feedbackFormState = JSON.parse(
-  localStorage.getItem('feedback-form-state')
-);
-if (feedbackFormState) {
-  Object.assign(formData, feedbackFormState);
+const savedData = localStorage.getItem(STORAGE_KEY);
+if (savedData) {
+  try {
+    const parsedData = JSON.parse(savedData);
+    formData = { ...formData, ...parsedData };
+    emailInput.value = parsedData.email || '';
+    messageInput.value = parsedData.message || '';
+  } catch (e) {
+    console.error('Помилка при розборі даних з localStorage:', e);
+  }
 }
-
-const feedbackForm = document.querySelector('.feedback-form');
-feedbackForm.elements.email.value = formData.email;
-feedbackForm.elements.message.value = formData.message;
-
-feedbackForm.addEventListener('input', event => {
-  if (event.target.nodeName === 'INPUT') {
-    formData.email = feedbackForm.elements.email.value;
-  } else if (event.target.nodeName === 'TEXTAREA') {
-    formData.message = feedbackForm.elements.message.value;
+form.addEventListener('input', event => {
+  if (event.target.name in formData) {
+    formData[event.target.name] = event.target.value.trim();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
 });
-
-feedbackForm.addEventListener('submit', event => {
+form.addEventListener('submit', event => {
   event.preventDefault();
-  if (formData.email && formData.message) {
-    console.table(formData);
-    feedbackForm.reset();
-    localStorage.removeItem('feedback-form-state');
-    formData.email = '';
-    formData.message = '';
-  } else {
+
+  if (!formData.email || !formData.message) {
     alert('Fill please all fields');
+    return;
   }
-  console.table(formData);
+
+  console.log('Form submitted with data:', formData);
+
+  formData = { email: '', message: '' };
+  localStorage.removeItem(STORAGE_KEY);
+  form.reset();
 });
